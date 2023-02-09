@@ -2,10 +2,10 @@
 def selected_lengths(min=5,max=12)
     words = File.open('google-10000.txt','r'){|word_list| word_list.to_a}
 
-    selected_words = words.filter {|word| word.length>=min && word.length <=max }
+    selected_words = words.filter {|word| word.length>min && word.length <= max+1 }
 end
 
-words_array = selected_lengths(5,12)
+words_array = selected_lengths(2,3)
 
 ##
 
@@ -59,18 +59,50 @@ class Game
             make_a_guess
         end
     end
+
+    def wins?
+        (self.word_to_guess - self.player.guesses_made).empty?
+    end
+
+    def round
+        self.display_word
+        self.make_a_guess
+    end
+
+    def play_again?
+        puts "Would you like to play another round? [Y/N]"
+        
+        again = gets.chomp
+        again.downcase!
+        if again == 'y'
+            return true
+        elsif again == 'n'
+            return false
+        else
+            play_again?
+        end
+    end
 end
 
 ##
 
 player = Player.new('player')
 game = Game.new(player)
+puts game.select_a_word(words_array)
 
 loop do
-    game.select_a_word(words_array)
 
-    game.display_word
-    game.make_a_guess
+    game.round
 
-    break if gets.chomp
+    if game.wins?
+        game.display_word
+        puts "You found the match!"
+
+        if game.play_again? == true
+            puts "score"
+        else
+            puts "Your score is : "+game.player.score.to_s
+            break
+        end
+    end
 end
