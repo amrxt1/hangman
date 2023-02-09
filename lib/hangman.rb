@@ -5,7 +5,7 @@ def selected_lengths(min=5,max=12)
     selected_words = words.filter {|word| word.length>min && word.length <= max+1 }
 end
 
-words_array = selected_lengths(2,3)
+WORDS_ARRAY = selected_lengths(2,3)
 
 ##
 
@@ -18,14 +18,19 @@ class Player
         @guesses_made = guesses_made
         @score = score
     end
+
+    def reset
+        self.guesses_made = []
+    end
+
 end
 
 class Game
-    attr_accessor :word_to_guess, :player
-
+    attr_accessor :word_to_guess, :player, :guess_limiter
     def initialize(player)
         @player = player
         @word_to_guess = ''
+        @guess_limiter = 15
     end
 
     def select_a_word(list)
@@ -46,8 +51,14 @@ class Game
     end
 
     def make_a_guess
-        puts "Please enter your guess"
+        puts "Please enter your guess                In order to save the game here, enter 1"
         guess = gets[0].chomp
+        guess.downcase!
+
+        if guess == '1'
+            pp self
+            return
+        end
 
         if guess == ''
             make_a_guess
@@ -70,11 +81,15 @@ class Game
     end
 
     def play_again?
+
+        puts "Your score is : "+self.player.score.to_s
+
         puts "Would you like to play another round? [Y/N]"
         
         again = gets.chomp
         again.downcase!
         if again == 'y'
+            self.select_a_word(WORDS_ARRAY)
             return true
         elsif again == 'n'
             return false
@@ -86,23 +101,45 @@ end
 
 ##
 
+## Code implementation
 player = Player.new('player')
 game = Game.new(player)
-puts game.select_a_word(words_array)
+puts game.select_a_word(WORDS_ARRAY)
 
+counter = 0
 loop do
-
+    
     game.round
+    counter += 1
+    puts "\nGuesses left : #{game.guess_limiter - counter}"
+    
+    if counter == game.guess_limiter
+        puts "Alas! you ran out of guesses"
+        puts "The word was : #{game.word_to_guess.join}"
+        
+        if game.play_again?
+            game.player.reset
+            counter = 0
+        else
+            puts "Have a great the rest of your day"
+            break
+        end
+    end
+
 
     if game.wins?
         game.display_word
-        puts "You found the match!"
+        puts "\nYou found the match!"
+        game.player.score += 1
 
-        if game.play_again? == true
-            puts "score"
+        if game.play_again?
+            game.player.reset
+            counter = 0
         else
-            puts "Your score is : "+game.player.score.to_s
+            puts "Have a great the rest of your day"
             break
         end
     end
 end
+
+##
