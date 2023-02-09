@@ -34,9 +34,29 @@ class Game
 
     def display_word       
         self.word_to_guess = self.word_to_guess.join.chomp.split('')
-        
+
         self.word_to_guess.each do |letter|
             self.player.guesses_made.include?(letter) ? (print letter+" ") : (print "_ ")
+        end
+        puts ""
+    end
+
+    def valid_guess?(guess)
+        !self.player.guesses_made.include?(guess)
+    end
+
+    def make_a_guess
+        puts "Please enter your guess"
+        guess = gets[0].chomp
+
+        if guess == ''
+            make_a_guess
+        elsif valid_guess? guess
+            #update guess
+            self.player.guesses_made.push(guess)
+        else
+            puts "Invalid! You already made that guess."
+            make_a_guess
         end
     end
 end
@@ -50,7 +70,7 @@ loop do
     game.select_a_word(words_array)
 
     game.display_word
-
+    game.make_a_guess
 
     break if gets.chomp
 end
