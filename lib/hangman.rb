@@ -7,7 +7,7 @@ def selected_lengths(min=5,max=12)
     selected_words = words.filter {|word| word.length>min && word.length <= max+1 }
 end
 
-WORDS_ARRAY = selected_lengths(2,3)
+WORDS_ARRAY = selected_lengths(5,12)
 
 ##
 
@@ -69,7 +69,10 @@ class Game
         self.word_to_guess.each do |letter|
             self.player.guesses_made.include?(letter) ? (print letter+" ") : (print "_ ")
         end
-        puts ""
+        print "\t\t\t Guesses already made : "
+
+        self.player.guesses_made.each{|i| print "#{i} "}
+        puts ''
     end
 
     def valid_guess?(guess)
@@ -77,12 +80,11 @@ class Game
     end
 
     def make_a_guess
-        puts "Please enter your guess                In order to save the game here, enter 1"
+        puts "Please enter your guess\t\t\t\t\t\tIn order to save the game here, enter 1"
         guess = gets[0].chomp
         guess.downcase!
 
         if guess == '1'
-            pp self
             return true
         end
 
@@ -124,7 +126,7 @@ class Game
             play_again?
         end
     end
-
+    
     def save
         Dir.mkdir('game-data') unless Dir.exists?('game-data')
 
@@ -132,7 +134,7 @@ class Game
         player_file.puts(self.to_json)
     end
 
-
+    
     def load_game
     end
 end
@@ -140,56 +142,46 @@ end
 ##
 
 ## Code implementation
-player = Player.new('player12')
-game = Game.new(player)
-##      Game Starts HERE
-
-puts "Welcome to HANGMAN"
-puts "Would you like to start a new game or Load a previous one?"
-puts " 1     New Game"
-puts " 2     Load Game"
-
-choice = ''
-until (choice == '1' || choice == '2' ) 
-    choice = (gets.chomp).downcase
-end
-
-case choice
-    ##Create a new Player
-when '1'
+def newgame
     puts "Enter the name for the player"
     player = Player.new(gets.chomp)
-    game = Game.new(player)
-    game.select_a_word(WORDS_ARRAY)
+    Game.new(player)
+end
 
-    ##Load an existing player
-when '2'
+def loadgame
     players = Dir.glob('game-data/*').map{ |x| x[10..x.length]}
     puts " \t NAME"
     players.each_with_index{|p,i| puts"#{i+1}\t#{p}"}
-
+    
     puts "\nPlease enter the player number you wish to load"
     choice = (gets.chomp.to_i)-1
-    puts "Loading #{players[choice]}"
+    puts `clear`
+    puts "Loading #{players[choice]} as player"
+    sleep 1.5
 
     data = File.read("game-data/#{players[choice]}")
-    game = Game.from_json(data)
+    Game.from_json(data)
 end
 
+##running the game using play()
+def play(game)
 counter = 0
 loop do
+    puts `clear`
+    puts "\nGuesses left : #{game.guess_limiter - counter}"
+
     if game.round
         game.save
         break
     end
 
-
     counter += 1
-    puts "\nGuesses left : #{game.guess_limiter - counter}"
     
     if counter == game.guess_limiter
-        puts "Alas! you ran out of guesses"
-        puts "The word was : #{game.word_to_guess.join}"
+        puts "\n"
+        puts "Alas! you were hanged as you ran out of guesses\n"
+        puts File.read('hanged.txt')
+        puts "\nThe word was : #{game.word_to_guess.join}"
         
         if game.play_again?
             game.player.reset
@@ -216,4 +208,33 @@ loop do
     end
 end
 
+end
+
+
+##      Game Starts HERE
+terminal_width = `tput cols`.chomp.to_i
+
+puts `clear`
+puts "Welcome to HANGMAN".center(terminal_width)
+puts "Would you like to start a new game or Load a previous one?"
+puts " 1     New Game"
+puts " 2     Load Game"
+
+choice = ''
+until (choice == '1' || choice == '2' ) 
+    choice = (gets.chomp).downcase
+end
+
+case choice
+
+when '1'
+    ## Create new player
+    game = newgame()
+    game.select_a_word(WORDS_ARRAY)
+when '2'
+    ##Load player
+    game = loadgame()
+end
+
+play(game)
 ##
