@@ -1,3 +1,5 @@
+require 'pry-byebug'
+require 'json'
 ## Selecting words 
 def selected_lengths(min=5,max=12)
     words = File.open('google-10000.txt','r'){|word_list| word_list.to_a}
@@ -22,15 +24,44 @@ class Player
     def reset
         self.guesses_made = []
     end
+    def to_json(e)
+        JSON.dump({
+            :name => @name,
+            :guesses_made => @guesses_made,
+            :score => @score
+        })
+    end
 
+    def self.from_json(string)
+        data = JSON.load string
+        self.new(data['name'],data['guesses_made'],data['score'])
+    end
+    
 end
 
 class Game
     attr_accessor :word_to_guess, :player, :guess_limiter
-    def initialize(player)
+    def initialize(player, word_to_guess = '', guess_limiter = 15)
         @player = player
-        @word_to_guess = ''
-        @guess_limiter = 15
+        @word_to_guess = word_to_guess
+        @guess_limiter = guess_limiter
+    end
+
+
+    def to_json
+        JSON.dump({
+            :word_to_guess => @word_to_guess,
+            :player => @player,
+            :guess_limiter => @guess_limiter
+        })
+    end
+
+    def self.from_json(string)
+        data = JSON.load(string)
+        player_data = data['player']
+        player = Player.new(player_data['name'],player_data['guesses_made'],player_data['score'])
+        binding.pry
+        self.new(player,data['word_to_guess'],data['guess_limiter'])
     end
 
     def select_a_word(list)
@@ -109,6 +140,16 @@ puts game.select_a_word(WORDS_ARRAY)
 counter = 0
 loop do
     
+    x = game.to_json
+    y = File.open('game','w')
+    y.puts x
+    y.close
+
+    puts "\n game from json"
+    g = Game.from_json(File.read('game'))
+    p g
+    puts "\nOG game"
+    p game
     game.round
     counter += 1
     puts "\nGuesses left : #{game.guess_limiter - counter}"
