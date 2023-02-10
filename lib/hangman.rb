@@ -142,14 +142,28 @@ end
 ## Code implementation
 player = Player.new('player12')
 game = Game.new(player)
-puts game.select_a_word(WORDS_ARRAY)
+##      Game Starts HERE
 
+puts "Welcome to HANGMAN"
+puts "Would you like to start a new game or Load a previous one?"
+puts " 1     New Game"
+puts " 2     Load Game"
 
-puts "Would you like to start a new game or Load a previous one? [Y/N]"
-choice = (gets.chomp).downcase
+choice = ''
+until (choice == '1' || choice == '2' ) 
+    choice = (gets.chomp).downcase
+end
 
+case choice
+    ##Create a new Player
+when '1'
+    puts "Enter the name for the player"
+    player = Player.new(gets.chomp)
+    game = Game.new(player)
+    game.select_a_word(WORDS_ARRAY)
 
-if choice == 'y'
+    ##Load an existing player
+when '2'
     players = Dir.glob('game-data/*').map{ |x| x[10..x.length]}
     puts " \t NAME"
     players.each_with_index{|p,i| puts"#{i+1}\t#{p}"}
@@ -160,8 +174,6 @@ if choice == 'y'
 
     data = File.read("game-data/#{players[choice]}")
     game = Game.from_json(data)
-
-    pp game
 end
 
 counter = 0
