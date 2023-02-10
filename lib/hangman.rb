@@ -31,12 +31,6 @@ class Player
             :score => @score
         })
     end
-
-    def self.from_json(string)
-        data = JSON.load string
-        self.new(data['name'],data['guesses_made'],data['score'])
-    end
-    
 end
 
 class Game
@@ -58,9 +52,10 @@ class Game
 
     def self.from_json(string)
         data = JSON.load(string)
+        ##separating player data
         player_data = data['player']
         player = Player.new(player_data['name'],player_data['guesses_made'],player_data['score'])
-        binding.pry
+        ##creating game object with player already as an object
         self.new(player,data['word_to_guess'],data['guess_limiter'])
     end
 
@@ -88,7 +83,7 @@ class Game
 
         if guess == '1'
             pp self
-            return
+            return true
         end
 
         if guess == ''
@@ -96,6 +91,7 @@ class Game
         elsif valid_guess? guess
             #update guess
             self.player.guesses_made.push(guess)
+            false
         else
             puts "Invalid! You already made that guess."
             make_a_guess
@@ -108,7 +104,7 @@ class Game
 
     def round
         self.display_word
-        self.make_a_guess
+        return self.make_a_guess
     end
 
     def play_again?
@@ -128,29 +124,54 @@ class Game
             play_again?
         end
     end
+
+    def save
+        Dir.mkdir('game-data') unless Dir.exists?('game-data')
+
+        player_file = File.open("game-data/#{self.player.name}","w")
+        player_file.puts(self.to_json)
+    end
+
+
+    def load_game
+    end
 end
 
 ##
 
 ## Code implementation
-player = Player.new('player')
+player = Player.new('player12')
 game = Game.new(player)
 puts game.select_a_word(WORDS_ARRAY)
 
+
+puts "Would you like to start a new game or Load a previous one? [Y/N]"
+choice = (gets.chomp).downcase
+
+
+if choice == 'y'
+    players = Dir.glob('game-data/*').map{ |x| x[10..x.length]}
+    puts " \t NAME"
+    players.each_with_index{|p,i| puts"#{i+1}\t#{p}"}
+
+    puts "\nPlease enter the player number you wish to load"
+    choice = (gets.chomp.to_i)-1
+    puts "Loading #{players[choice]}"
+
+    data = File.read("game-data/#{players[choice]}")
+    game = Game.from_json(data)
+
+    pp game
+end
+
 counter = 0
 loop do
-    
-    x = game.to_json
-    y = File.open('game','w')
-    y.puts x
-    y.close
+    if game.round
+        game.save
+        break
+    end
 
-    puts "\n game from json"
-    g = Game.from_json(File.read('game'))
-    p g
-    puts "\nOG game"
-    p game
-    game.round
+
     counter += 1
     puts "\nGuesses left : #{game.guess_limiter - counter}"
     
